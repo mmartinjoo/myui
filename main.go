@@ -56,14 +56,6 @@ type TableData struct {
 	Rows    []map[string]string
 }
 
-func setFocus(p tview.Primitive, app *tview.Application) {
-	go func() {
-		app.QueueUpdateDraw(func() {
-			app.SetFocus(p)
-		})
-	}()
-}
-
 func createFilter(tableData TableData, tableName string) *tview.Form {
 	form := tview.NewForm()
 
