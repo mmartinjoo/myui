@@ -149,7 +149,7 @@ func createTable(tableData TableData, tableName string) *tview.Table {
 
 	for c := 0; c < len(tableData.Columns)-1; c++ {
 		table.SetCell(0, c,
-			tview.NewTableCell(tableData.Columns[c]).SetTextColor(tcell.ColorYellow).SetAlign(tview.AlignCenter))
+			tview.NewTableCell(tableData.Columns[c]).SetTextColor(tcell.ColorYellow).SetAlign(tview.AlignCenter).SetSelectable(false))
 	}
 
 	for r := 0; r < len(tableData.Rows)-1; r++ {
