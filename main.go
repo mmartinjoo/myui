@@ -46,27 +46,9 @@ func main() {
 		return event
 	})
 
-	//
-	//flex := tview.NewFlex().
-	//	AddItem(table, 0, 1, false).
-	//	AddItem(filter, 0, 1, false)
-
-	//table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-	//	if event.Key() == tcell.KeyCtrlF {
-	//		setFocus(filter, app)
-	//	}
-	//	return event
-	//})
-
 	if err := app.SetRoot(pages, true).SetFocus(previewTable).Run(); err != nil {
 		panic(err)
 	}
-
-	//renderTable(sites, app)
-	//renderFilter(sites, app)
-
-	//fmt.Println(sites.Columns)
-	//fmt.Println(sites.Rows)
 }
 
 type TableData struct {
@@ -134,18 +116,10 @@ func createFilter(tableData TableData, tableName string) *tview.Form {
 			createTable(newTableData, tableName)
 
 			pages.SwitchToPage("table")
-			//pages.AddPage("results", table, true, true).
-			//	SwitchToPage("results")
 		}).
 		SetBorder(true).SetTitle("Filter").SetTitleAlign(tview.AlignLeft)
 
 	return form
-
-	//if err := app.SetRoot(form, true).EnableMouse(true).Run(); err != nil {
-	//	panic(err)
-	//}
-
-	//fmt.Println(form.GetFormItem(0).(*tview.InputField).GetText())
 }
 
 func createTable(tableData TableData, tableName string) {
@@ -193,8 +167,6 @@ func createTable(tableData TableData, tableName string) {
 				createTable(newTableData, tableName)
 
 				pages.SwitchToPage("table")
-				//pages.AddPage("table", newTable, true, true).
-				//	SwitchToPage("table")
 			}
 
 			if buttonLabel == "Cancel" {
@@ -212,13 +184,7 @@ func createTable(tableData TableData, tableName string) {
 	}).SetSelectedFunc(func(row int, column int) {
 		pages.AddPage("action_modal", modal, true, true).
 			SwitchToPage("action_modal")
-		//table.GetCell(row, column).SetTextColor(tcell.ColorRed)
-		//table.SetSelectable(false, false)
 	})
-
-	//if err := app.SetRoot(table, true).SetFocus(table).Run(); err != nil {
-	//	panic(err)
-	//}
 }
 
 func readTable(query string, db *sql.DB) TableData {
