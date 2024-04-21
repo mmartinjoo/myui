@@ -10,18 +10,21 @@ import (
 var (
 	app   *tview.Application
 	pages *tview.Pages
+	db    *sql.DB
 )
 
 func main() {
 	app = tview.NewApplication()
 
-	db, err := sql.Open("mysql", "root:root@/analytics")
+	var err error
+
+	db, err = sql.Open("mysql", "root:root@/analytics")
 
 	if err != nil {
 		panic(err)
 	}
 
-	sites := readTable("page_views", db)
+	sites := readTable("select * from page_views limit 100", db)
 
 	table := createTable(sites)
 	filter := createFilter(sites, "page_views")
@@ -121,7 +124,13 @@ func createFilter(tableData TableData, tableName string) *tview.Form {
 				i++
 			}
 
-			panic(query)
+			query += " limit 100"
+
+			tableData := readTable(query, db)
+			table := createTable(tableData)
+
+			pages.AddPage("results", table, true, true).
+				SwitchToPage("results")
 		}).
 		SetBorder(true).SetTitle("Filter").SetTitleAlign(tview.AlignLeft)
 
@@ -172,9 +181,9 @@ func createTable(tableData TableData) *tview.Table {
 	//}
 }
 
-func readTable(table string, db *sql.DB) TableData {
-	// Execute the query
-	rows, err := db.Query("SELECT * FROM " + table + " LIMIT 100")
+func readTable(query string, db *sql.DB) TableData {
+	rows, err := db.Query(query)
+
 	if err != nil {
 		panic(err.Error()) // proper error handling instead of panic in your app
 	}
