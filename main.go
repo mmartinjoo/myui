@@ -26,7 +26,7 @@ func main() {
 
 	sites := readTable("select * from page_views limit 100", db)
 
-	table := createTable(sites)
+	table := createTable(sites, "page_views")
 	filter := createFilter(sites, "page_views")
 
 	pages = tview.NewPages().
@@ -127,7 +127,7 @@ func createFilter(tableData TableData, tableName string) *tview.Form {
 			query += " limit 100"
 
 			tableData := readTable(query, db)
-			table := createTable(tableData)
+			table := createTable(tableData, tableName)
 
 			pages.AddPage("results", table, true, true).
 				SwitchToPage("results")
@@ -143,7 +143,7 @@ func createFilter(tableData TableData, tableName string) *tview.Form {
 	//fmt.Println(form.GetFormItem(0).(*tview.InputField).GetText())
 }
 
-func createTable(tableData TableData) *tview.Table {
+func createTable(tableData TableData, tableName string) *tview.Table {
 	table := tview.NewTable().
 		SetBorders(true)
 
@@ -163,6 +163,40 @@ func createTable(tableData TableData) *tview.Table {
 		}
 	}
 
+	modal := tview.NewModal().
+		SetText("What do you want to do with the row?").
+		AddButtons([]string{"Update", "Delete", "Cancel"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			if buttonLabel == "Update" {
+				panic("udpate")
+			}
+
+			if buttonLabel == "Delete" {
+				row, _ := table.GetSelection()
+
+				// Because of the header row
+				row--
+
+				query := "delete from " + tableName + " where id = " + tableData.Rows[row]["id"]
+
+				_, err := db.Query(query)
+
+				if err != nil {
+					panic(err.Error())
+				}
+
+				newTableData := readTable("select * from "+tableName+" limit 100", db)
+				newTable := createTable(newTableData, tableName)
+
+				pages.AddPage("table", newTable, true, true).
+					SwitchToPage("table")
+			}
+
+			if buttonLabel == "Cancel" {
+				pages.SwitchToPage("table")
+			}
+		})
+
 	table.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEscape {
 			app.Stop()
@@ -171,8 +205,10 @@ func createTable(tableData TableData) *tview.Table {
 			table.SetSelectable(true, false)
 		}
 	}).SetSelectedFunc(func(row int, column int) {
-		table.GetCell(row, column).SetTextColor(tcell.ColorRed)
-		table.SetSelectable(false, false)
+		pages.AddPage("action_modal", modal, true, true).
+			SwitchToPage("action_modal")
+		//table.GetCell(row, column).SetTextColor(tcell.ColorRed)
+		//table.SetSelectable(false, false)
 	})
 
 	return table
