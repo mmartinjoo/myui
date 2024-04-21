@@ -126,8 +126,8 @@ func createFilter(tableData TableData, tableName string) *tview.Form {
 
 			query += " limit 100"
 
-			tableData := readTable(query, db)
-			table := createTable(tableData, tableName)
+			newTableData := readTable(query, db)
+			table := createTable(newTableData, tableName)
 
 			pages.AddPage("results", table, true, true).
 				SwitchToPage("results")
