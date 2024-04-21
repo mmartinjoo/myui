@@ -8,9 +8,10 @@ import (
 )
 
 var (
-	app   *tview.Application
-	pages *tview.Pages
-	db    *sql.DB
+	app          *tview.Application
+	pages        *tview.Pages
+	previewTable *tview.Table
+	db           *sql.DB
 )
 
 func main() {
@@ -24,13 +25,16 @@ func main() {
 		panic(err)
 	}
 
+	previewTable = tview.NewTable().
+		SetBorders(true)
+
 	sites := readTable("select * from page_views limit 100", db)
 
-	table := createTable(sites, "page_views")
+	createTable(sites, "page_views")
 	filter := createFilter(sites, "page_views")
 
 	pages = tview.NewPages().
-		AddPage("table", table, true, true).
+		AddPage("table", previewTable, true, true).
 		AddPage("filter", filter, true, false)
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -54,7 +58,7 @@ func main() {
 	//	return event
 	//})
 
-	if err := app.SetRoot(pages, true).SetFocus(table).Run(); err != nil {
+	if err := app.SetRoot(pages, true).SetFocus(previewTable).Run(); err != nil {
 		panic(err)
 	}
 
@@ -127,10 +131,11 @@ func createFilter(tableData TableData, tableName string) *tview.Form {
 			query += " limit 100"
 
 			newTableData := readTable(query, db)
-			table := createTable(newTableData, tableName)
+			createTable(newTableData, tableName)
 
-			pages.AddPage("results", table, true, true).
-				SwitchToPage("results")
+			pages.SwitchToPage("table")
+			//pages.AddPage("results", table, true, true).
+			//	SwitchToPage("results")
 		}).
 		SetBorder(true).SetTitle("Filter").SetTitleAlign(tview.AlignLeft)
 
@@ -143,12 +148,11 @@ func createFilter(tableData TableData, tableName string) *tview.Form {
 	//fmt.Println(form.GetFormItem(0).(*tview.InputField).GetText())
 }
 
-func createTable(tableData TableData, tableName string) *tview.Table {
-	table := tview.NewTable().
-		SetBorders(true)
+func createTable(tableData TableData, tableName string) {
+	previewTable.Clear()
 
 	for c := 0; c < len(tableData.Columns)-1; c++ {
-		table.SetCell(0, c,
+		previewTable.SetCell(0, c,
 			tview.NewTableCell(tableData.Columns[c]).SetTextColor(tcell.ColorYellow).SetAlign(tview.AlignCenter).SetSelectable(false))
 	}
 
@@ -156,7 +160,7 @@ func createTable(tableData TableData, tableName string) *tview.Table {
 		for c := 0; c < len(tableData.Columns)-1; c++ {
 			color := tcell.ColorWhite
 
-			table.SetCell(r+1, c,
+			previewTable.SetCell(r+1, c,
 				tview.NewTableCell(tableData.Rows[r][tableData.Columns[c]]).
 					SetTextColor(color).
 					SetAlign(tview.AlignCenter))
@@ -172,7 +176,7 @@ func createTable(tableData TableData, tableName string) *tview.Table {
 			}
 
 			if buttonLabel == "Delete" {
-				row, _ := table.GetSelection()
+				row, _ := previewTable.GetSelection()
 
 				// Because of the header row
 				row--
@@ -186,10 +190,11 @@ func createTable(tableData TableData, tableName string) *tview.Table {
 				}
 
 				newTableData := readTable("select * from "+tableName+" limit 100", db)
-				newTable := createTable(newTableData, tableName)
+				createTable(newTableData, tableName)
 
-				pages.AddPage("table", newTable, true, true).
-					SwitchToPage("table")
+				pages.SwitchToPage("table")
+				//pages.AddPage("table", newTable, true, true).
+				//	SwitchToPage("table")
 			}
 
 			if buttonLabel == "Cancel" {
@@ -197,12 +202,12 @@ func createTable(tableData TableData, tableName string) *tview.Table {
 			}
 		})
 
-	table.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
+	previewTable.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEscape {
 			app.Stop()
 		}
 		if key == tcell.KeyEnter {
-			table.SetSelectable(true, false)
+			previewTable.SetSelectable(true, false)
 		}
 	}).SetSelectedFunc(func(row int, column int) {
 		pages.AddPage("action_modal", modal, true, true).
@@ -211,7 +216,6 @@ func createTable(tableData TableData, tableName string) *tview.Table {
 		//table.SetSelectable(false, false)
 	})
 
-	return table
 	//if err := app.SetRoot(table, true).SetFocus(table).Run(); err != nil {
 	//	panic(err)
 	//}
