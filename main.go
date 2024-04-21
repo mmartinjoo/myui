@@ -12,29 +12,22 @@ var (
 	pages        *tview.Pages
 	previewTable *tview.Table
 	db           *sql.DB
+	filter       *tview.Form
 )
 
 func main() {
 	app = tview.NewApplication()
 
-	var err error
-
-	db, err = sql.Open("mysql", "root:root@/analytics")
-
-	if err != nil {
-		panic(err)
-	}
-
 	previewTable = tview.NewTable().
 		SetBorders(true)
 
-	sites := readTable("select * from page_views limit 100", db)
+	filter = tview.NewForm()
 
-	createTable(sites, "page_views")
-	filter := createFilter(sites, "page_views")
+	login := createLogin()
 
 	pages = tview.NewPages().
-		AddPage("table", previewTable, true, true).
+		AddPage("login", login, true, true).
+		AddPage("table", previewTable, true, false).
 		AddPage("filter", filter, true, false)
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -46,7 +39,7 @@ func main() {
 		return event
 	})
 
-	if err := app.SetRoot(pages, true).SetFocus(previewTable).Run(); err != nil {
+	if err := app.SetRoot(pages, true).SetFocus(login).Run(); err != nil {
 		panic(err)
 	}
 }
@@ -56,20 +49,20 @@ type TableData struct {
 	Rows    []map[string]string
 }
 
-func createFilter(tableData TableData, tableName string) *tview.Form {
-	form := tview.NewForm()
+func createFilter(tableData TableData, tableName string) {
+	filter.Clear(false)
 
 	for i := 0; i < len(tableData.Columns); i++ {
-		form.
+		filter.
 			AddInputField(tableData.Columns[i], "", 20, nil, nil)
 	}
 
-	form.
+	filter.
 		AddButton("Filter", func() {
 			filters := make(map[string]string, len(tableData.Columns))
 
 			for i := 0; i < len(tableData.Columns); i++ {
-				formItem := form.GetFormItem(i)
+				formItem := filter.GetFormItem(i)
 
 				val := formItem.(*tview.InputField).GetText()
 
@@ -110,8 +103,6 @@ func createFilter(tableData TableData, tableName string) *tview.Form {
 			pages.SwitchToPage("table")
 		}).
 		SetBorder(true).SetTitle("Filter").SetTitleAlign(tview.AlignLeft)
-
-	return form
 }
 
 func createTable(tableData TableData, tableName string) {
@@ -237,4 +228,31 @@ func readTable(query string, db *sql.DB) TableData {
 	}
 
 	return TableData{Columns: columns, Rows: results}
+}
+
+func createLogin() *tview.Form {
+	form := tview.NewForm()
+
+	form.
+		AddInputField("Username", "", 20, nil, nil).
+		AddPasswordField("Password", "", 20, '*', nil).
+		AddInputField("Database", "", 20, nil, nil).
+		AddButton("Login", func() {
+			var err error
+
+			db, err = sql.Open("mysql", "root:root@/analytics")
+
+			if err != nil {
+				panic(err)
+			}
+
+			sites := readTable("select * from page_views limit 100", db)
+
+			createTable(sites, "page_views")
+			createFilter(sites, "page_views")
+
+			pages.SwitchToPage("table")
+		})
+
+	return form
 }
