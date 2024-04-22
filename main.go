@@ -29,10 +29,15 @@ func main() {
 
 	login := createLogin()
 
+	flex := tview.NewFlex().
+		AddItem(tables, 0, 1, true).
+		AddItem(previewTable, 0, 3, false)
+
 	pages = tview.NewPages().
 		AddPage("login", login, true, true).
-		AddPage("tables", tables, true, false).
-		AddPage("preview_table", previewTable, true, false).
+		AddPage("finder", flex, true, false).
+		//AddPage("tables", tables, true, false).
+		//AddPage("preview_table", previewTable, true, false).
 		AddPage("filter", filter, true, false)
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -173,6 +178,8 @@ func createTable(tableData TableData, tableName string) {
 		pages.AddPage("action_modal", modal, true, true).
 			SwitchToPage("action_modal")
 	})
+
+	app.SetFocus(previewTable)
 }
 
 func readTable(query string, db *sql.DB) TableData {
@@ -263,7 +270,7 @@ func createLogin() *tview.Form {
 			//createTable(sites, "page_views")
 			//createFilter(sites, "page_views")
 			//
-			pages.SwitchToPage("tables")
+			pages.SwitchToPage("finder")
 		})
 
 	return form
@@ -295,6 +302,24 @@ func readTables() []string {
 
 func createTables(tableNames []string) {
 	for key, tableName := range tableNames {
-		tables.SetCell(key, 0, tview.NewTableCell(tableName))
+		tables.SetCell(key, 0, tview.NewTableCell(tableName)).SetSelectable(true, false)
 	}
+
+	tables.SetSelectable(true, false)
+
+	tables.Select(0, 0).SetDoneFunc(func(key tcell.Key) {
+		if key == tcell.KeyEscape {
+			app.Stop()
+		}
+		if key == tcell.KeyEnter {
+			tables.SetSelectable(true, false)
+		}
+	}).SetSelectedFunc(func(row int, column int) {
+		cell := tables.GetCell(row, column)
+
+		tableName := cell.Text
+
+		tableData := readTable("select * from "+tableName+" limit 100", db)
+		createTable(tableData, tableName)
+	})
 }
