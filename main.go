@@ -31,13 +31,11 @@ func main() {
 
 	flex := tview.NewFlex().
 		AddItem(tables, 0, 1, true).
-		AddItem(previewTable, 0, 3, false)
+		AddItem(previewTable, 0, 4, false)
 
 	pages = tview.NewPages().
 		AddPage("login", login, true, true).
 		AddPage("finder", flex, true, false).
-		//AddPage("tables", tables, true, false).
-		//AddPage("preview_table", previewTable, true, false).
 		AddPage("filter", filter, true, false)
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -159,17 +157,20 @@ func createTable(tableData TableData, tableName string) {
 				newTableData := readTable("select * from "+tableName+" limit 100", db)
 				createTable(newTableData, tableName)
 
-				pages.SwitchToPage("preview_table")
+				pages.SwitchToPage("finder")
+				app.SetFocus(previewTable)
 			}
 
 			if buttonLabel == "Cancel" {
-				pages.SwitchToPage("preview_table")
+				pages.SwitchToPage("finder")
+				app.SetFocus(previewTable)
 			}
 		})
 
 	previewTable.Select(0, 0).SetFixed(1, 1).SetDoneFunc(func(key tcell.Key) {
 		if key == tcell.KeyEscape {
-			app.Stop()
+			previewTable.Clear()
+			app.SetFocus(tables)
 		}
 		if key == tcell.KeyEnter {
 			previewTable.SetSelectable(true, false)
