@@ -13,6 +13,8 @@ var (
 	previewTable *tview.Table
 	db           *sql.DB
 	filter       *tview.Form
+	database     string
+	tables       *tview.Table
 )
 
 func main() {
@@ -23,10 +25,13 @@ func main() {
 
 	filter = tview.NewForm()
 
+	tables = tview.NewTable()
+
 	login := createLogin()
 
 	pages = tview.NewPages().
 		AddPage("login", login, true, true).
+		AddPage("tables", tables, true, false).
 		AddPage("preview_table", previewTable, true, false).
 		AddPage("filter", filter, true, false)
 
@@ -234,13 +239,13 @@ func createLogin() *tview.Form {
 	form := tview.NewForm()
 
 	form.
-		AddInputField("Username", "", 20, nil, nil).
-		AddPasswordField("Password", "", 20, '*', nil).
-		AddInputField("Database", "", 20, nil, nil).
+		AddInputField("Username", "root", 20, nil, nil).
+		AddPasswordField("Password", "root", 20, '*', nil).
+		AddInputField("Database", "analytics", 20, nil, nil).
 		AddButton("Login", func() {
 			username := form.GetFormItemByLabel("Username").(*tview.InputField).GetText()
 			password := form.GetFormItemByLabel("Password").(*tview.InputField).GetText()
-			database := form.GetFormItemByLabel("Database").(*tview.InputField).GetText()
+			database = form.GetFormItemByLabel("Database").(*tview.InputField).GetText()
 
 			var err error
 
@@ -250,22 +255,46 @@ func createLogin() *tview.Form {
 				panic(err)
 			}
 
-			sites := readTable("select * from page_views limit 100", db)
+			tableNames := readTables()
+			createTables(tableNames)
 
-			createTable(sites, "page_views")
-			createFilter(sites, "page_views")
-
-			pages.SwitchToPage("preview_table")
+			//sites := readTable("select * from page_views limit 100", db)
+			//
+			//createTable(sites, "page_views")
+			//createFilter(sites, "page_views")
+			//
+			pages.SwitchToPage("tables")
 		})
 
 	return form
 }
 
-//func readTables() {
-//
-//	_, err := db.Query("show tables from " . )
-//
-//	if err != nil {
-//		panic(err.Error())
-//	}
-//}
+func readTables() []string {
+	rows, err := db.Query("show tables from " + database)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	var tableNames []string
+
+	for rows.Next() {
+		var tableName = ""
+
+		err := rows.Scan(&tableName)
+
+		tableNames = append(tableNames, tableName)
+
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+
+	return tableNames
+}
+
+func createTables(tableNames []string) {
+	for key, tableName := range tableNames {
+		tables.SetCell(key, 0, tview.NewTableCell(tableName))
+	}
+}
