@@ -238,9 +238,13 @@ func createLogin() *tview.Form {
 		AddPasswordField("Password", "", 20, '*', nil).
 		AddInputField("Database", "", 20, nil, nil).
 		AddButton("Login", func() {
+			username := form.GetFormItemByLabel("Username").(*tview.InputField).GetText()
+			password := form.GetFormItemByLabel("Password").(*tview.InputField).GetText()
+			database := form.GetFormItemByLabel("Database").(*tview.InputField).GetText()
+
 			var err error
 
-			db, err = sql.Open("mysql", "root:root@/analytics")
+			db, err = sql.Open("mysql", username+":"+password+"@/"+database)
 
 			if err != nil {
 				panic(err)
@@ -256,3 +260,12 @@ func createLogin() *tview.Form {
 
 	return form
 }
+
+//func readTables() {
+//
+//	_, err := db.Query("show tables from " . )
+//
+//	if err != nil {
+//		panic(err.Error())
+//	}
+//}
