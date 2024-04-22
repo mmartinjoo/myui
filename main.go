@@ -27,7 +27,7 @@ func main() {
 
 	pages = tview.NewPages().
 		AddPage("login", login, true, true).
-		AddPage("table", previewTable, true, false).
+		AddPage("preview_table", previewTable, true, false).
 		AddPage("filter", filter, true, false)
 
 	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -100,7 +100,7 @@ func createFilter(tableData TableData, tableName string) {
 			newTableData := readTable(query, db)
 			createTable(newTableData, tableName)
 
-			pages.SwitchToPage("table")
+			pages.SwitchToPage("preview_table")
 		}).
 		SetBorder(true).SetTitle("Filter").SetTitleAlign(tview.AlignLeft)
 }
@@ -149,11 +149,11 @@ func createTable(tableData TableData, tableName string) {
 				newTableData := readTable("select * from "+tableName+" limit 100", db)
 				createTable(newTableData, tableName)
 
-				pages.SwitchToPage("table")
+				pages.SwitchToPage("preview_table")
 			}
 
 			if buttonLabel == "Cancel" {
-				pages.SwitchToPage("table")
+				pages.SwitchToPage("preview_table")
 			}
 		})
 
@@ -251,7 +251,7 @@ func createLogin() *tview.Form {
 			createTable(sites, "page_views")
 			createFilter(sites, "page_views")
 
-			pages.SwitchToPage("table")
+			pages.SwitchToPage("preview_table")
 		})
 
 	return form
